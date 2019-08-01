@@ -29,6 +29,8 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
+import org.jboss.el.cache.FactoryFinderCache;
+
 class FactoryFinder {
 
     private static final boolean IS_SECURITY_ENABLED = (System.getSecurityManager() != null);
@@ -114,6 +116,12 @@ class FactoryFinder {
             throw new ELException(x.toString(), x);
         }
 
+        // try to find services in cache
+        final String deploymentFactoryClassName = FactoryFinderCache.loadImplementationClassName(factoryId, classLoader);
+        if(deploymentFactoryClassName != null && !deploymentFactoryClassName.equals("")) {
+              return newInstance(deploymentFactoryClassName, classLoader, properties);
+        }
+        
         // try to find services in CLASSPATH
         try {
             ServiceLoader<?> serviceLoader = ServiceLoader.load(serviceClass, classLoader);
