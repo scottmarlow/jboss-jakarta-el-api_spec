@@ -85,7 +85,30 @@
         <extensionName>jakarta.el</extensionName>
         <bundle.symbolicName>jakarta.el-api</bundle.symbolicName>
         <vendorName>Eclipse Foundation</vendorName>
+		<version.org.glassfish.jakarta.el>5.0.0-M1</version.org.glassfish.jakarta.el>
+		<version.org.junit.junit>4.13.1</version.org.junit.junit>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.org.junit.junit}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+	    <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.el</artifactId>
+            <version>${version.org.glassfish.jakarta.el}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>jakarta.el</groupId>
+                    <artifactId>jakarta.el-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
 
     <build>
         <resources>
