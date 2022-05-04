@@ -36,7 +36,7 @@
     <description>
         Jakarta Expression Language defines an expression language for Java applications
     </description>
-    <url>https://projects.eclipse.org/projects/ee4j.el</url>
+    <url>https://github.com/jboss/jboss-jakarta-el-api_spec</url>
 
     <developers>
         <developer>
@@ -80,21 +80,21 @@
     <scm>
         <connection>scm:git:git@github.com:jboss/jboss-jakarta-el-api_spec.git</connection>
         <developerConnection>scm:git:git@github.com:jboss/jboss-jakarta-el-api_spec.git</developerConnection>
-        <url>https://github.com/eclipse-ee4j/el-ri</url>
+        <url>https://github.com/jboss/jboss-jakarta-el-api_spec</url>
         <tag>HEAD</tag>
     </scm>
     <issueManagement>
-        <system>github</system>
-        <url>https://github.com/eclipse-ee4j/el-ri/issues</url>
+        <system>JIRA</system>
+        <url>https://issues.redhat.com/projects/JBEE</url>
     </issueManagement>
 
     <properties>
-        <!-- Make sure the two versions are in sync with the maven version -->
         <spec.version>5.0</spec.version>
         <bundle.version>${project.version}</bundle.version>
         <extensionName>jakarta.el</extensionName>
-        <bundle.symbolicName>jakarta.el-api</bundle.symbolicName>
+        <bundle.symbolicName>${groupId}.${artifactId}</bundle.symbolicName>
         <vendorName>Eclipse Foundation</vendorName>
+        <implementation.vendorName>JBoss by Red Hat</implementation.vendorName>
 		<version.org.glassfish.jakarta.el>5.0.0-M1</version.org.glassfish.jakarta.el>
 		<version.org.junit.junit>4.13.1</version.org.junit.junit>
     </properties>
@@ -218,7 +218,7 @@
                         <Specification-Version>${spec.version}</Specification-Version>
                         <Specification-Vendor>${vendorName}</Specification-Vendor>
                         <Implementation-Version>${project.version}</Implementation-Version>
-                        <Implementation-Vendor>${vendorName}</Implementation-Vendor>
+                        <Implementation-Vendor>${implementation.vendorName}</Implementation-Vendor>
                         <Export-Package>jakarta.el</Export-Package>
                     </instructions>
                 </configuration>
