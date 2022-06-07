@@ -23,8 +23,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,30 +48,11 @@ import org.jboss.el.cache.BeanPropertiesCache;
  * @author Dongbin Nie
  */
 class ELUtil {
-    private static final String EL_BC22_PROPERTY= "org.wildfly.el.bc2.2";
 
     /**
      * This class may not be constructed.
      */
     private ELUtil() {
-    }
-
-    static final java.util.Properties properties = new java.util.Properties();
-    private static ExpressionFactory exprFactory = null;
-    static {
-        setupProperties();
-    }
-
-    private static void setupProperties(){
-        boolean bc22Enabled = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return Boolean.getBoolean(EL_BC22_PROPERTY);
-            }
-
-        });
-        if (bc22Enabled) {
-            properties.setProperty("jakarta.el.bc2.2", "true");
-        }
     }
 
     /**
@@ -180,13 +159,6 @@ class ELUtil {
         }
 
         return result;
-    }
-
-    static ExpressionFactory getExpressionFactory() {
-        if (exprFactory == null){
-            exprFactory = ExpressionFactory.newInstance(properties);
-        }
-        return exprFactory;
     }
 
     static Constructor<?> findConstructor(Class<?> klass, Class<?>[] paramTypes, Object[] params) {
@@ -557,7 +529,7 @@ class ELUtil {
         // TODO: This isn't pretty but it works. Significant refactoring would
         // be required to avoid the exception.
         try {
-            getExpressionFactory().coerceToType(src, target);
+            ELManager.getExpressionFactory().coerceToType(src, target);
         } catch (Exception e) {
             return false;
         }
