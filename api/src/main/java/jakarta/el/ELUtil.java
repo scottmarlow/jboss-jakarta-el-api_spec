@@ -585,6 +585,7 @@ class ELUtil {
         return null;
     }
 
+    @SuppressWarnings("null") // params cannot be null when used
     static Object[] buildParameters(ELContext context, Class<?>[] parameterTypes, boolean isVarArgs, Object[] params) {
         Object[] parameters = null;
         if (parameterTypes.length > 0) {
