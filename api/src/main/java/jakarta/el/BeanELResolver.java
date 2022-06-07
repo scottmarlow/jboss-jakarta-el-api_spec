@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021 Oracle and/or its affiliates and others.
+ * Copyright (c) 1997, 2022 Oracle and/or its affiliates and others.
  * All rights reserved.
  * Copyright 2004 The Apache Software Foundation
  *
@@ -143,7 +143,7 @@ public class BeanELResolver extends ELResolver {
         BeanProperty beanProperty = getBeanProperty(context, base, property);
         context.setPropertyResolved(true);
         
-        if (isReadOnly || beanProperty.isReadOnly()) {
+        if (isReadOnly || beanProperty.isReadOnly(base)) {
             return null;
         }
         
@@ -187,7 +187,7 @@ public class BeanELResolver extends ELResolver {
             return null;
         }
 
-        Method method = getBeanProperty(context, base, property).getReadMethod();
+        Method method = getBeanProperty(context, base, property).getReadMethod(base);
         if (method == null) {
             throw new PropertyNotFoundException(
                     getExceptionMessageString(context, "propertyNotReadable", new Object[] { base.getClass().getName(), property.toString() }));
@@ -255,7 +255,7 @@ public class BeanELResolver extends ELResolver {
             throw new PropertyNotWritableException(getExceptionMessageString(context, "resolverNotwritable", new Object[] { base.getClass().getName() }));
         }
 
-        Method method = getBeanProperty(context, base, property).getWriteMethod();
+        Method method = getBeanProperty(context, base, property).getWriteMethod(base);
         if (method == null) {
             throw new PropertyNotWritableException(
                     getExceptionMessageString(context, "propertyNotWritable", new Object[] { base.getClass().getName(), property.toString() }));
@@ -326,8 +326,9 @@ public class BeanELResolver extends ELResolver {
             return null;
         }
 
-        Method method = ELUtil.findMethod(base.getClass(), methodName.toString(), paramTypes, params, false);
-        method = BeanPropertiesCache.getMethod(base.getClass(), method);
+        Method method = ELUtil.findMethod(base.getClass(), base, methodName.toString(), paramTypes, params, false);
+        method = BeanPropertiesCache.getMethod(base.getClass(), base, method);
+
         for (Object param: params) {
             // If the parameters is a LambdaExpression, set the ELContext
             // for its evaluation
@@ -387,7 +388,7 @@ public class BeanELResolver extends ELResolver {
             return true;
         }
 
-        return getBeanProperty(context, base, property).isReadOnly();
+        return getBeanProperty(context, base, property).isReadOnly(base);
     }
 
     /**

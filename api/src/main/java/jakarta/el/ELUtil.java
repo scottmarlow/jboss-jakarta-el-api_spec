@@ -200,8 +200,8 @@ class ELUtil {
         }
     }
 
-    static Method findMethod(Class<?> klass, String methodName, Class<?>[] paramTypes, Object[] params, boolean staticOnly) {
-        Method method = findMethod(klass, methodName, paramTypes, params);
+    static Method findMethod(Class<?> klass, Object base, String methodName, Class<?>[] paramTypes, Object[] params, boolean staticOnly) {
+        Method method = findMethod(klass, base, methodName, paramTypes, params);
         if (staticOnly && !Modifier.isStatic(method.getModifiers())) {
             throw new MethodNotFoundException("Method " + methodName + "for class " + klass + " not found or accessible");
         }
@@ -223,7 +223,7 @@ class ELUtil {
         }
     }
 
-    static Method findMethod(Class<?> clazz, String methodName, Class<?>[] paramTypes, Object[] paramValues) {
+    static Method findMethod(Class<?> clazz, Object base, String methodName, Class<?>[] paramTypes, Object[] paramValues) {
         if (clazz == null || methodName == null) {
             throw new MethodNotFoundException("Method not found: " + clazz + "." + methodName + "(" + paramString(paramTypes) + ")");
         }
@@ -242,7 +242,7 @@ class ELUtil {
             return null;
         }
 
-        return getMethod(clazz, (Method) result.unWrap());
+        return getMethod(clazz, base, (Method) result.unWrap());
     }
 
     @SuppressWarnings("null")
@@ -559,10 +559,10 @@ class ELUtil {
      * for a non-public class that implements a public interface, the read/write methods will be for the class, and
      * therefore inaccessible. To correct this, a version of the same method must be found in a superclass or interface.
      */
-    static Method getMethod(Class<?> type, Method m) {
+    static Method getMethod(Class<?> type, Object base, Method m) {
         // BeanPropertiesCache.getMethod is implemented with the logic from this method in the Eclipse Jakarta EL API
         // We delegate to that here to avoid the need to duplicate that logic
-        return BeanPropertiesCache.getMethod(type, m);
+        return BeanPropertiesCache.getMethod(type, base, m);
     }
 
     static Constructor<?> getConstructor(Class<?> type, Constructor<?> c) {

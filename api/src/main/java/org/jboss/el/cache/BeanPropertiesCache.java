@@ -28,6 +28,7 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -115,30 +116,36 @@ public class BeanPropertiesCache {
      */
     public final static class BeanProperty {
 
+        final private Class<?> baseClass;
+        final private PropertyDescriptor descriptor;
         private Method readMethod;
         private Method writeMethod;
-        private PropertyDescriptor descriptor;
 
         public BeanProperty(Class<?> baseClass,
                             PropertyDescriptor descriptor) {
+            this.baseClass = baseClass;
             this.descriptor = descriptor;
-            readMethod = getMethod(baseClass, descriptor.getReadMethod());
-            writeMethod = getMethod(baseClass, descriptor.getWriteMethod());
         }
 
         public Class getPropertyType() {
             return descriptor.getPropertyType();
         }
 
-        public boolean isReadOnly() {
-            return getWriteMethod() == null;
+        public boolean isReadOnly(Object base) {
+            return getWriteMethod(base) == null;
         }
 
-        public Method getReadMethod() {
+        public Method getReadMethod(Object base) {
+            if (readMethod == null) {
+                readMethod = getMethod(baseClass, base, descriptor.getReadMethod());
+            }
             return readMethod;
         }
 
-        public Method getWriteMethod() {
+        public Method getWriteMethod(Object base) {
+            if (writeMethod == null) {
+                writeMethod = getMethod(baseClass, base, descriptor.getWriteMethod());
+            }
             return writeMethod;
         }
     }
@@ -208,9 +215,12 @@ public class BeanPropertiesCache {
      * In the org.jboss fork, the ELUtil method delegates to this. This is to avoid having
      * two impls of the same code.
      */
-    public static Method getMethod(Class<?> type, Method m) {
-
-        if (m == null || Modifier.isPublic(type.getModifiers())) {
+    public static Method getMethod(Class<?> type, Object base, Method m) {
+        // If base is null, method MUST be static
+        // If base is non-null, method may be static or non-static
+        if (m == null ||
+                (Modifier.isPublic(type.getModifiers()) &&
+                        (canAccess(base, m) || base != null && canAccess(null, m)))) {
             return m;
         }
         Class<?>[] inf = type.getInterfaces();
@@ -218,7 +228,7 @@ public class BeanPropertiesCache {
         for (int i = 0; i < inf.length; i++) {
             try {
                 mp = inf[i].getMethod(m.getName(), m.getParameterTypes());
-                mp = getMethod(mp.getDeclaringClass(), mp);
+                mp = getMethod(mp.getDeclaringClass(), base, mp);
                 if (mp != null) {
                     return mp;
                 }
@@ -230,7 +240,7 @@ public class BeanPropertiesCache {
         if (sup != null) {
             try {
                 mp = sup.getMethod(m.getName(), m.getParameterTypes());
-                mp = getMethod(mp.getDeclaringClass(), mp);
+                mp = getMethod(mp.getDeclaringClass(), base, mp);
                 if (mp != null) {
                     return mp;
                 }
@@ -240,6 +250,16 @@ public class BeanPropertiesCache {
         }
         return null;
     }
+
+
+    static boolean canAccess(Object base, AccessibleObject accessibleObject) {
+        try {
+            return accessibleObject.canAccess(base);
+        } catch (IllegalArgumentException iae) {
+            return false;
+        }
+    }
+
 
     public static Map<Class<?>, BeanProperties> getProperties() {
         return properties;
