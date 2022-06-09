@@ -187,8 +187,7 @@ public class BeanELResolver extends ELResolver {
             return null;
         }
 
-        BeanProperty bp = getBeanProperty(context, base, property);
-        Method method = bp.getReadMethod();
+        Method method = getBeanProperty(context, base, property).getReadMethod();
         if (method == null) {
             throw new PropertyNotFoundException(
                     getExceptionMessageString(context, "propertyNotReadable", new Object[] { base.getClass().getName(), property.toString() }));
@@ -256,8 +255,7 @@ public class BeanELResolver extends ELResolver {
             throw new PropertyNotWritableException(getExceptionMessageString(context, "resolverNotwritable", new Object[] { base.getClass().getName() }));
         }
 
-        BeanProperty bp = getBeanProperty(context, base, property);
-        Method method = bp.getWriteMethod();
+        Method method = getBeanProperty(context, base, property).getWriteMethod();
         if (method == null) {
             throw new PropertyNotWritableException(
                     getExceptionMessageString(context, "propertyNotWritable", new Object[] { base.getClass().getName(), property.toString() }));
@@ -473,6 +471,7 @@ public class BeanELResolver extends ELResolver {
             beanProperties = new BeanProperties(baseClass);
             BeanPropertiesCache.getProperties().put(baseClass, beanProperties);
         }
+
         BeanProperty beanProperty = beanProperties.getBeanProperty(property);
         if (beanProperty == null) {
             throw new PropertyNotFoundException(getExceptionMessageString(context, "propertyNotFound", new Object[] { baseClass.getName(), property }));
