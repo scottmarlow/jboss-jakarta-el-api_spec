@@ -50,9 +50,10 @@ public class BeanPropertiesCache {
         }
     }
 
-    public static class SoftConcurrentHashMap extends
+    static private class SoftConcurrentHashMap extends
             ConcurrentHashMap<Class<?>, BeanProperties> {
 
+        private static final long serialVersionUID = -178867497897782229L;
         private static final int CACHE_INIT_SIZE = 1024;
         private ConcurrentHashMap<Class<?>, BPSoftReference> map =
                 new ConcurrentHashMap<Class<?>, BPSoftReference>(CACHE_INIT_SIZE);
@@ -147,20 +148,45 @@ public class BeanPropertiesCache {
      */
     public final static class BeanProperties {
 
-        private final Map<String, BeanProperty> propertyMap =
-                new HashMap<String, BeanProperty>();
+        private final Map<String, BeanProperty> propertyMap = new HashMap<>();
 
         public BeanProperties(Class<?> baseClass) {
             PropertyDescriptor[] descriptors;
             try {
                 BeanInfo info = Introspector.getBeanInfo(baseClass);
                 descriptors = info.getPropertyDescriptors();
+                for (PropertyDescriptor descriptor: descriptors) {
+                    propertyMap.put(descriptor.getName(), new BeanProperty(baseClass, descriptor));
+                }
+                /*
+                 * Populating from any interfaces solves two distinct problems:
+                 * 1. When running under a security manager, classes may be
+                 *    unaccessible but have accessible interfaces.
+                 * 2. It enables default methods to be included.
+                 */
+                populateFromInterfaces(baseClass, baseClass);
             } catch (IntrospectionException ie) {
                 throw new ELException(ie);
             }
-            for (PropertyDescriptor pd: descriptors) {
-                propertyMap.put(pd.getName(),
-                        new BeanProperty(baseClass, pd));
+        }
+
+        private void populateFromInterfaces(Class<?> baseClass, Class<?> aClass) throws IntrospectionException {
+            Class<?> interfaces[] = aClass.getInterfaces();
+            if (interfaces.length > 0) {
+                for (Class<?> ifs : interfaces) {
+                    BeanInfo info = Introspector.getBeanInfo(ifs);
+                    PropertyDescriptor[] pds = info.getPropertyDescriptors();
+                    for (PropertyDescriptor pd : pds) {
+                        if (!this.propertyMap.containsKey(pd.getName())) {
+                            this.propertyMap.put(pd.getName(), new BeanProperty(
+                                    baseClass, pd));
+                        }
+                    }
+                }
+            }
+            Class<?> superclass = aClass.getSuperclass();
+            if (superclass != null) {
+                populateFromInterfaces(baseClass, superclass);
             }
         }
 
@@ -177,49 +203,45 @@ public class BeanPropertiesCache {
 
 
     /*
-     * Get a public method form a public class or interface of a given method.
-     * Note that if a PropertyDescriptor is obtained for a non-public class that
-     * implements a public interface, the read/write methods will be for the
-     * class, and therefore inaccessible.  To correct this, a version of the
-     * same method must be found in a superclass or interface.
-     **/
+     * This is the same as the ELUtil.getMethod implementation in the Eclipse Jakarta EL project.
+     * That class is package protected so we can't call it from this class.
+     * In the org.jboss fork, the ELUtil method delegates to this. This is to avoid having
+     * two impls of the same code.
+     */
+    public static Method getMethod(Class<?> type, Method m) {
 
-    public static Method getMethod(Class<?> cl, Method method) {
-
-        if (method == null) {
-            return null;
+        if (m == null || Modifier.isPublic(type.getModifiers())) {
+            return m;
         }
-
-        if (Modifier.isPublic(cl.getModifiers())) {
-            return method;
-        }
-        Class<?> [] interfaces = cl.getInterfaces ();
-        for (int i = 0; i < interfaces.length; i++) {
-            Class<?> c = interfaces[i];
-            Method m = null;
+        Class<?>[] inf = type.getInterfaces();
+        Method mp = null;
+        for (int i = 0; i < inf.length; i++) {
             try {
-                m = c.getMethod(method.getName(), method.getParameterTypes());
-                c = m.getDeclaringClass();
-                if ((m = getMethod(c, m)) != null)
-                    return m;
-            } catch (NoSuchMethodException ex) {
+                mp = inf[i].getMethod(m.getName(), m.getParameterTypes());
+                mp = getMethod(mp.getDeclaringClass(), mp);
+                if (mp != null) {
+                    return mp;
+                }
+            } catch (NoSuchMethodException e) {
+                // Ignore
             }
         }
-        Class<?> c = cl.getSuperclass();
-        if (c != null) {
-            Method m = null;
+        Class<?> sup = type.getSuperclass();
+        if (sup != null) {
             try {
-                m = c.getMethod(method.getName(), method.getParameterTypes());
-                c = m.getDeclaringClass();
-                if ((m = getMethod(c, m)) != null)
-                    return m;
-            } catch (NoSuchMethodException ex) {
+                mp = sup.getMethod(m.getName(), m.getParameterTypes());
+                mp = getMethod(mp.getDeclaringClass(), mp);
+                if (mp != null) {
+                    return mp;
+                }
+            } catch (NoSuchMethodException e) {
+                // Ignore
             }
         }
         return null;
     }
 
-    public static SoftConcurrentHashMap getProperties() {
+    public static Map<Class<?>, BeanProperties> getProperties() {
         return properties;
     }
 
