@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019 Oracle and/or its affiliates and others.
+ * Copyright (c) 2013, 2022 Oracle and/or its affiliates and others.
  * All rights reserved.
  *
  * This program and the accompanying materials are made available under the
@@ -18,6 +18,8 @@
 package jakarta.el;
 
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Manages Jakarta Expression Language parsing and evaluation environment. The ELManager maintains an instance of
@@ -26,6 +28,25 @@ import java.lang.reflect.Method;
  * @since Jakarta Expression Language 3.0
  */
 public class ELManager {
+    private static final String EL_BC22_PROPERTY= "org.wildfly.el.bc2.2";
+
+    static final java.util.Properties properties = new java.util.Properties();
+    private static volatile ExpressionFactory exprFactory = null;
+    static {
+        setupProperties();
+    }
+
+    private static void setupProperties(){
+        boolean bc22Enabled = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            public Boolean run() {
+                return Boolean.getBoolean(EL_BC22_PROPERTY);
+            }
+
+        });
+        if (bc22Enabled) {
+            properties.setProperty("jakarta.el.bc2.2", "true");
+        }
+    }
 
     private StandardELContext elContext;
 
@@ -35,7 +56,16 @@ public class ELManager {
      * @return The ExpressionFactory
      */
     public static ExpressionFactory getExpressionFactory() {
-        return ELUtil.getExpressionFactory();
+        if (exprFactory == null){
+            createExpessionFactory();
+        }
+        return exprFactory;
+    }
+
+    private static synchronized void createExpessionFactory() {
+        if (exprFactory == null){
+            exprFactory = ExpressionFactory.newInstance(properties);
+        }
     }
 
     /**
