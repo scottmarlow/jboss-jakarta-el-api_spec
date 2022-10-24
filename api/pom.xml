@@ -92,7 +92,7 @@
         <spec.version>5.0</spec.version>
         <bundle.version>${project.version}</bundle.version>
         <extensionName>jakarta.el</extensionName>
-        <bundle.symbolicName>${groupId}.${artifactId}</bundle.symbolicName>
+        <bundle.symbolicName>${project.groupId}.${project.artifactId}</bundle.symbolicName>
         <vendorName>Eclipse Foundation</vendorName>
         <implementation.vendorName>JBoss by Red Hat</implementation.vendorName>
 		<version.org.glassfish.jakarta.el>5.0.0-M1</version.org.glassfish.jakarta.el>
